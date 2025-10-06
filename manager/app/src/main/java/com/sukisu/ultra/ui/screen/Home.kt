@@ -73,6 +73,7 @@ fun HomeScreen(navigator: DestinationsNavigator) {
     val context = LocalContext.current
     val viewModel = viewModel<HomeViewModel>()
     val coroutineScope = rememberCoroutineScope()
+    var isRefreshing by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = navigator) {
         viewModel.loadUserSettings(context)
@@ -85,6 +86,19 @@ fun HomeScreen(navigator: DestinationsNavigator) {
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val scrollState = rememberScrollState()
+
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            coroutineScope.launch {
+                viewModel.loadCoreData()
+                delay(100)
+                viewModel.loadExtendedData(context)
+                isRefreshing = false
+            }
+        }
+    )
 
     Scaffold(
         topBar = {
@@ -102,6 +116,7 @@ fun HomeScreen(navigator: DestinationsNavigator) {
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
+                .pullRefresh(pullRefreshState)
         ) {
             Column(
                 modifier = Modifier
